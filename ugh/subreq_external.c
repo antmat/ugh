@@ -16,24 +16,13 @@ void ugh_subreq_wcb_ready(EV_P_ ev_async *w, int tev)
     ugh_subreq_external_del(r);
 }
 
-//static
-//int ugh_subreq_external_copy_chunk(ugh_subreq_external_t *r, char *data, size_t size)
-//{
-//    if (r->chunk_body_size < r->body.size + size)
-//    {
-//        char *old_body = r->body.data;
-
-//        r->chunk_body_size *= 2;
-//        r->body.data = aux_pool_nalloc(r->c->pool, r->chunk_body_size);
-
-//        memcpy(r->body.data, old_body, r->body.size);
-//    }
-
-//    memcpy(r->body.data + r->body.size, data, size);
-//    r->body.size += size;
-
-//    return 0;
-//}
+int ugh_subreq_external_assign_body(ugh_subreq_external_t *r, char *data, size_t size)
+{
+    r->body.data = aux_pool_nalloc(r->c->pool, size);
+    r->body.size = size;
+    memcpy(r->body.data, data, size);
+    return 0;
+}
 
 
 ugh_subreq_external_t *ugh_subreq_external_add(ugh_client_t *c)
@@ -72,13 +61,12 @@ void ugh_subreq_external_signal_ready(ugh_subreq_external_t* ex_subreq) {
 int ugh_subreq_external_run(ugh_subreq_external_t *r)
 {
     r->c->wait++;
-    r->on_request_done = ugh_subreq_external_signal_ready;
+    r->request_done = ugh_subreq_external_signal_ready;
     ev_timer_init(&r->wev_timeout, &ugh_subreq_external_timeout, 0, r->timeout);
     ev_async_init(&r->wev_ready, &ugh_subreq_wcb_ready);
 
     ev_timer_again(loop, &r->wev_timeout);
     ev_async_start(loop, &r->wev_ready);
-    r->run_external(NULL, r);
     return 0;
 }
 

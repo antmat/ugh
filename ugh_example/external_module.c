@@ -7,19 +7,17 @@ typedef struct
 
 extern ugh_module_t ugh_module_ext_example;
 
-void run_ex_request(void* data, ugh_subreq_external_t* ex_subreq) {
-    ex_subreq->body.size = 9;
-    ex_subreq->body.data = "It works";
-    ex_subreq->on_request_done(ex_subreq);
-}
-
 int ugh_module_ext_example_handle(ugh_client_t *c, void *data, strp body)
 {
 //    ugh_module_ext_example_conf_t *conf = data; /* get module conf */
 
     ugh_subreq_external_t *e_subreq = ugh_subreq_external_add(c);
-    e_subreq->run_external = run_ex_request;
     ugh_subreq_external_run(e_subreq);
+
+    // Here lies any magic by which request_done can be called.
+    // request done is safe to call from other thread
+    ugh_subreq_external_assign_body(e_subreq, "It works", sizeof("It works"));
+    e_subreq->request_done(e_subreq);
 
     /* wait for it (do smth in different coroutine while it is being downloaded) */
 

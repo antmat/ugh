@@ -273,13 +273,14 @@ typedef int (*ugh_subreq_handle_fp)(ugh_subreq_t *r, char *data, size_t size);
 struct ugh_subreq_external
 {
     void* external_data;
-    void(*on_request_done)(ugh_subreq_external_t*);
+    void(*request_done)(ugh_subreq_external_t*);
     void(*run_external)(void* /*external data*/, ugh_subreq_external_t* /*subrequest to run*/);
     ugh_client_t *c;
     ev_async wev_ready;
     ev_timer wev_timeout;
     ev_tstamp timeout;
     strt body;
+    size_t body_capacity;
 };
 
 struct ugh_subreq
@@ -368,6 +369,8 @@ struct ugh_subreq
 
 ugh_subreq_t *ugh_subreq_add(ugh_client_t *c, char *url, size_t size, int flags);
 ugh_subreq_external_t *ugh_subreq_external_add(ugh_client_t *c);
+
+int ugh_subreq_external_assign_body(ugh_subreq_external_t *r, char *data, size_t size);
 
 int ugh_subreq_set_method(ugh_subreq_t *r, unsigned char method);
 int ugh_subreq_set_body(ugh_subreq_t *r, char *body, size_t body_size);
