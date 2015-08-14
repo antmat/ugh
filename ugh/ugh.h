@@ -256,6 +256,9 @@ ugh_upstream_t *ugh_upstream_get(ugh_config_t *cfg, const char *name, size_t siz
 typedef struct ugh_subreq
 	ugh_subreq_t;
 
+typedef struct ugh_subreq_external
+    ugh_subreq_external_t;
+
 typedef struct ugh_channel
 	ugh_channel_t;
 
@@ -266,6 +269,18 @@ typedef int (*ugh_subreq_handle_fp)(ugh_subreq_t *r, char *data, size_t size);
 
 #define UGH_RESPONSE_CHUNKED -1
 #define UGH_RESPONSE_CLOSE_AFTER_BODY -2
+
+struct ugh_subreq_external
+{
+    void* external_data;
+    void(*on_request_done)(ugh_subreq_external_t*);
+    void(*run_external)(void* /*external data*/, ugh_subreq_external_t* /*subrequest to run*/);
+    ugh_client_t *c;
+    ev_async wev_ready;
+    ev_timer wev_timeout;
+    ev_tstamp timeout;
+    strt body;
+};
 
 struct ugh_subreq
 {
@@ -352,6 +367,8 @@ struct ugh_subreq
 #define UGH_SUBREQ_PUSH 2
 
 ugh_subreq_t *ugh_subreq_add(ugh_client_t *c, char *url, size_t size, int flags);
+ugh_subreq_external_t *ugh_subreq_external_add(ugh_client_t *c);
+
 int ugh_subreq_set_method(ugh_subreq_t *r, unsigned char method);
 int ugh_subreq_set_body(ugh_subreq_t *r, char *body, size_t body_size);
 int ugh_subreq_set_timeout(ugh_subreq_t *r, ev_tstamp timeout, int timeout_type);
@@ -363,8 +380,10 @@ int ugh_subreq_set_timeout_connect(ugh_subreq_t *r, ev_tstamp timeout);
 int ugh_subreq_set_channel(ugh_subreq_t *r, ugh_channel_t *ch, unsigned tag);
 
 int ugh_subreq_run(ugh_subreq_t *r);
+int ugh_subreq_external_run(ugh_subreq_external_t *r);
 int ugh_subreq_gen(ugh_subreq_t *r, strp u_host);
 int ugh_subreq_del(ugh_subreq_t *r, uint32_t ft_type, int ft_errno);
+int ugh_subreq_external_del(ugh_subreq_external_t *r);
 
 strp ugh_subreq_get_host(ugh_subreq_t *r);
 in_port_t ugh_subreq_get_port(ugh_subreq_t *r);
